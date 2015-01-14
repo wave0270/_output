@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8'>
+	<link rel="stylesheet" type="text/css" href="../../libs/bootstrap/css/bootstrap.min.css" />
+	
+    <script src="../../libs/jquery/jquery.min.js"></script>
+    <script src="../../libs/bootstrap/js/bootstrap.min.js"></script>
+    <script src="../../libs/ractive/ractive.min.js"></script>
+    <script src="../../custom/js/custom.js"></script>
+    <!--local-->
+    <script src="../../_siteInput/dataContruct/template.js"></script>
+    <script src="../../_siteInput/js/custom.js"></script>
+    <script src="../../_connector/fileManager.js"></script>
+</head>
+<body>
+	<div id="view_list_novel"> 
+		<div class="paging_top"></div>
+		<div id="info_novel"></div>
+		<div id="page_novel"></div>
+		<div class="paging_end"></div>
+	</div>
+</body>
+	<script>
+		/**
+		 * open novel detail page
+		 * @param number chapIdex : 1
+		 * @param string name : 'dau-pha-thuong-khung'
+		 * **/
+		function openDetail(chapIdex){
+			window.location = String.format('viewDetail.html?type={0}&name={1}&chap={2}',typeO,saveO,chapIdex);;
+		}
+		/***
+		 * open a list page with param
+		 * @param num page : 2
+		 * @param str type : "novels"
+		 * @param str type : "Dau pha thuong khung"
+		 * */
+		function openList(page,type,name){
+			var pathname = window.location.pathname.split('/'); // returns path only
+			pathname = pathname[pathname.length-1];
+			window.location = String.format('{0}?type={1}&name={2}&page={3}',pathname,type,name,page);
+		}
+		/***
+		 * render a page list
+		 * */
+		function renderList(template,data){
+			var ractive = new Ractive({
+			     el: 'page_novel',
+			     template: template,
+			     data: data
+			});
+		}
+		/***
+		 * prepare data before render
+		 * @return arr : 50 index arr
+		 * */
+		function preRender(){
+			/*case pageOf > pageNumber*/
+			if(pageOf > database[typeO][saveO].meta.pageNumber){
+				pageOf = database[typeO][saveO].meta.pageNumber;
+			}
+			/*get a part of index data*/
+			var chapStart = 1 + (pageOf*database[typeO][saveO].meta.chapterInPage - database[typeO][saveO].meta.chapterInPage);
+			var chapEnd = database[typeO][saveO].meta.chapterInPage + (pageOf*database[typeO][saveO].meta.chapterInPage - database[typeO][saveO].meta.chapterInPage);
+			var partIndexArr = database[typeO][saveO]['index'].slice(chapStart-1,chapEnd);
+			/*render*/
+			var obj = {
+				data : partIndexArr,
+				name : database[typeO][saveO].meta.name,
+			};
+			return obj;
+		}
+		
+		/*main throw*********************************/
+		/*get type of obj*/
+		var typeO = getQueryVariable('type');
+		if(!typeO){
+			typeO = 'novels';
+		}
+		/*get name of obj*/
+		var saveO = getQueryVariable('name');
+		if(!saveO){
+			saveO = 'dau-pha-thuong-khung';
+		}
+		/*get page number*/
+		var pageOf = getQueryVariable('page');
+		if(!pageOf){
+			pageOf = 1;
+		}else{
+			pageOf = Number(pageOf);
+		}
+		
+		/*start*/
+		var database = getDatabase(typeO,saveO);
+		localStorage.setItem('_DATABASE',JSON.stringify(database));
+		renderList(TEMP_VIEW_NOVEL_LIST,preRender());
+		renderPagination(pageOf,saveO,typeO,Math.ceil(database[typeO][saveO].meta.chapterNumber/database[typeO][saveO].meta.chapterInPage),'openList');
+
+		console.log(database)
+	</script>
+</html>

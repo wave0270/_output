@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8'>
+	<link rel="stylesheet" type="text/css" href="../../libs/bootstrap/css/bootstrap.min.css" />
+	
+    <script src="../../libs/jquery/jquery.min.js"></script>
+    <script src="../../libs/bootstrap/js/bootstrap.min.js"></script>
+    <script src="../../libs/ractive/ractive.min.js"></script>
+    <script src="../../custom/js/custom.js"></script>
+    <!--local-->
+    <script src="../../_siteInput/dataContruct/template.js"></script>
+	<script src="../js/novel.js"></script>
+</head>
+<body>
+	<div id="view_list_novel"> 
+		<div class="paging_top"></div>
+		<div id="info_novel"></div>
+		<div id="page_novel"></div>
+		<div class="paging_end"></div>
+	</div>
+</body>
+	<script>
+		/*open novel detail page*/
+		function openNovelDetail(chapIdex){
+			window.location = String.format('viewNovelDetail.html?name={0}&page={1}',name,chapIdex);;
+		}
+		/*view paging*/
+		function viewPagination(page,name,type,pageNumber){
+			page = Number(page);
+			if(page==1){ 
+				var previous = null;
+			}else{
+				var previous = page - 1;
+			}
+			if(page >= pageNumber){
+				var next = null;
+			}else{
+				var next = page + 1;
+			}
+			var data = {
+				previous : previous,
+				next : next,
+				name : name,
+				type : type
+			};
+			var ractive = new Ractive({
+			     el: '.paging_top',
+			     template: TEMP_PAGINATION,
+			     data: data
+			});
+			var ractive = new Ractive({
+			     el: '.paging_end',
+			     template: TEMP_PAGINATION,
+			     data: data
+			});
+		}
+		function openNovelList(page,type,name){
+			var pathname = window.location.pathname.split('/'); // returns path only
+			pathname = pathname[pathname.length-1];
+			window.location = String.format('{0}?type={1}&name={2}&page={3}',pathname,type,name,page);
+		}
+		/***
+		 * 
+		 * */
+		function viewList(template,data){
+			var ractive = new Ractive({
+			     el: 'page_novel',
+			     template: template,
+			     data: {data: data}
+			});
+		}
+		function getData(page,lastDataNumber,name,type){
+			console.log('Page: '+page);
+			if(page == undefined || page == '1'){
+				var linkInPage = 50;
+			}else{
+				/*case: page number too big*/
+				if(Number(page) > Math.ceil(lastDataNumber/50)){
+					page = new String(Math.ceil(lastDataNumber/50));
+				}
+				var linkInPage = 50*Number(page);
+			}
+			if(info.lastDataNumber < linkInPage){ linkInPage = lastDataNumber;}
+			var arr = [];
+			for(var i=linkInPage-49 ; i <= linkInPage ; i ++){
+				var temp = {index : i, type : type, name : name};
+				arr.push(temp);
+				/*case: at lastDataNumber in info */
+				if(i==lastDataNumber){
+					i = linkInPage +1;
+				}
+			}
+			return arr;
+		}
+		/*main throw*********************************/
+		/*get type of obj*/
+		var typeO = getQueryVariable('type');
+		if(!typeO){
+			typeO = 'novels';
+		}
+		/*get name of obj*/
+		var nameO = getQueryVariable('name');
+		if(!nameO){
+			nameO = 'dau-pha-thuong-khung';
+		}
+		/*get page number*/
+		var pageOf = getQueryVariable('page');
+		if(!pageOf){
+			pageOf = '1';
+		}
+		/*start*/
+		var info = get.data(String.format('../../_siteInput/data/{0}/{1}/info.js',typeO,nameO)).data;
+		var data = getData(pageOf,info.meta.lastDataNumber,nameO,typeO);
+		viewList(TEMP_VIEW_NOVEL_LIST,data);
+		viewPagination(pageOf,nameO,typeO,Math.ceil(info.meta.lastDataNumber/50));
+	</script>
+</html>

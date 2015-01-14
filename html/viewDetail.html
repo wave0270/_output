@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset='utf-8'>
+	<link rel="stylesheet" type="text/css" href="../../libs/bootstrap/css/bootstrap.min.css" />
+	
+    <script src="../../libs/jquery/jquery.min.js"></script>
+    <script src="../../libs/bootstrap/js/bootstrap.min.js"></script>
+    <script src="../../libs/ractive/ractive.min.js"></script>
+    <script src="../../custom/js/custom.js"></script>
+    <!--local-->
+    <script src="../../_siteInput/dataContruct/template.js"></script>
+    <script src="../../_siteInput/js/custom.js"></script>
+    <script src="../../_connector/fileManager.js"></script>
+    <style>
+    </style>
+</head>
+<body>
+	<div id="view_detail_novel"> 
+		<div class="paging_top"></div>
+		<div id="detail_contain"></div>
+		<div class="paging_end"></div>
+	</div>
+</body>
+	<script>
+		/*open novel detail page*/
+		function render(data,template,contain){
+			var ractive = new Ractive({
+			     el: contain,
+			     template: template,
+			     data: data
+			});
+		}
+		function openDetail(page,type,name){
+			var pathname = window.location.pathname.split('/'); // returns path only
+			pathname = pathname[pathname.length-1];
+			window.location = String.format('{0}?type={1}&name={2}&chap={3}',pathname,type,name,page);
+		}
+
+		/*kiem tra chapter da co trong database chua*/
+		function checkChapInLocal(chapIndex){
+			if(database[typeO][saveO].data == undefined){
+				database[typeO][saveO].data = {};
+				return false;
+			}
+			if(!database[typeO][saveO].data["chapter-"+chapIndex]){
+				return false;
+			}
+			return true;
+			
+		}
+		/*main throw*********************************/
+		/*get parameter*/
+		/*get type of obj*/
+		var typeO = getQueryVariable('type');
+		if(!typeO){
+			typeO = 'novels';
+		}
+		/*get name of obj*/
+		var saveO = getQueryVariable('name');
+		if(!saveO){
+			saveO = 'dau-pha-thuong-khung';
+		}
+		/*get chapter number*/
+		var chapO = getQueryVariable('chap');
+		if(!chapO){
+			chapO = 1;
+		}else{
+			chapO = Number(chapO);
+		}
+		/*define page index*/
+		var database = getDatabase(typeO,saveO);
+		var status = checkChapInLocal(chapO);
+		if(status  == "false" || status  == false){
+			var fileIndex = Math.ceil(chapO/50)*50;
+			var dataArr = JSON.parse(fM.read(String.format("{0}/{1}/data/data-{2}.js",typeO,saveO,fileIndex)).data);
+			for (var attrname in dataArr.data) { database[typeO][saveO].data[attrname] = dataArr.data[attrname]; }
+			localStorage.setItem('_DATABASE',JSON.stringify(database));
+		}
+		var data = database[typeO][saveO].data["chapter-"+chapO];
+		data["name"] = database[typeO][saveO].meta.name;
+		render(data,TEMP_VIEW_NOVEL_DETAIL,'detail_contain');
+		renderPagination(chapO,saveO,typeO,database[typeO][saveO].meta.chapterNumber,'openDetail');
+		console.log(database)
+	</script>
+</html>
